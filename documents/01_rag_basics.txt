@@ -1,0 +1,7 @@
+RAG Basics — Course Notes
+
+Retrieval-Augmented Generation (RAG) is an AI design pattern with three steps: Retrieve relevant information from a document collection, Augment the model's input prompt with that information as context, and Generate an answer with a large language model. Because the model's answer is grounded in your own data, RAG reduces hallucinations and makes source citations possible.
+
+RAG is especially useful for custom Q&A agents over private or niche documents that the base model has never seen, such as internal manuals, course notes, or product FAQs. Compared with fine-tuning, RAG is cheaper, updates instantly when documents change, and keeps a clear link between an answer and its source.
+
+A typical RAG pipeline works at the level of passage chunks rather than whole documents. Each document is split into chunks of roughly one to three paragraphs. Each chunk is converted into an embedding vector and stored. At question time, the query is embedded too, the most similar chunks are retrieved (for example the top 3 by cosine similarity), and those chunks are pasted into the prompt as context.

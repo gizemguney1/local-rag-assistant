@@ -1,0 +1,9 @@
+Text Embeddings and Vector Search — Course Notes
+
+A text embedding is a numeric vector representation of a piece of text that captures its semantic meaning. Texts with similar meaning map to vectors that are close together, which enables semantic search: instead of matching keywords, we match meaning.
+
+The most common way to compare two embeddings is cosine similarity: the dot product of the two vectors divided by the product of their lengths. A value close to 1 means very similar meaning, a value near 0 means unrelated.
+
+In a RAG system, an embedding model converts every document chunk into a vector at ingestion time. At query time the user's question is embedded with the same model, and the system finds the chunks whose vectors have the highest cosine similarity to the question vector. For a small collection (dozens or hundreds of chunks) a brute-force comparison against every stored vector is fast enough; dedicated vector databases only become necessary at much larger scale.
+
+A small local embedding model such as qwen3-embedding-0.6b is sufficient for a course project and runs quickly on a laptop CPU.

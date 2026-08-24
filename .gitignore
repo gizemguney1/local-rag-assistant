@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local data (rebuilt with `python ingest.py`)
+rag.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,9 @@
+SQLite for Local Storage — Course Notes
+
+SQLite is a serverless, self-contained SQL database engine. An entire database lives in a single ordinary file on disk, and no separate server process or configuration is needed. It is the most widely deployed database engine in the world, embedded in phones, browsers, and countless applications.
+
+Its advantages for a local project are simplicity (zero setup), portability (one cross-platform file), and built-in support in Python via the standard-library `sqlite3` module — no extra installation required.
+
+In this project SQLite acts as the data layer of the RAG assistant. A single `documents` table stores, for every chunk: the source file name, the chunk index, the chunk text, and the embedding vector serialized as JSON text. At query time all rows are read and the similarity is computed in Python, which is perfectly adequate for a knowledge base of this size.
+
+Useful commands: `sqlite3 rag.db` opens the database in the command-line shell, `.tables` lists tables, and `SELECT COUNT(*) FROM documents;` shows how many chunks are stored.

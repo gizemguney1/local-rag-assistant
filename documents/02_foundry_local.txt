@@ -1,0 +1,9 @@
+Foundry Local — Overview
+
+Microsoft Foundry Local is an end-to-end local AI solution that provides a lightweight runtime and SDK for running large language models completely on a user's own device. It ships with a curated catalog of optimized models such as the Phi family and Qwen models.
+
+No cloud account and no dedicated GPU are required. Foundry Local automatically downloads and manages models, and runs inference with CPU, GPU, or NPU acceleration depending on the hardware it detects. Applications built on it can deliver fully offline AI with zero network calls at inference time.
+
+Developers interact with Foundry Local in two main ways: the `foundry` command-line tool (for example `foundry model run phi-3.5-mini`) and language SDKs. The Python SDK is installed with `pip install foundry-local-sdk`. The service exposes an OpenAI-compatible REST endpoint, so the standard `openai` Python client can be pointed at the local server for chat completions and embeddings.
+
+Foundry Local supports Windows and macOS. Model aliases such as `phi-3.5-mini` are resolved automatically to the model variant that best fits the local hardware.

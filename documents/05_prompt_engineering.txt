@@ -1,0 +1,11 @@
+Prompt Engineering for Q&A — Course Notes
+
+Retrieving the right documents is only half the job: how the information is presented to the model matters just as much. The Chat Completions API distinguishes a system prompt (role instructions that set the assistant's behavior) from a user prompt (the actual question plus any context).
+
+Good practices for a RAG Q&A assistant:
+1. Instruct the model to answer only from the provided context and not from its general knowledge.
+2. Tell it what to do when the context is insufficient — for example, reply "I don't have that information" instead of guessing. This is the main defense against fabricated answers.
+3. Ask for source citations, such as mentioning the document name the answer came from.
+4. Keep the temperature low (around 0.2) for factual Q&A so answers stay consistent.
+
+A simple template: the system prompt carries the rules, and the user prompt contains the retrieved chunks labeled with their sources, followed by the question. Small wording changes in the system prompt can noticeably change the model's behavior, so it is worth testing a few variants.
