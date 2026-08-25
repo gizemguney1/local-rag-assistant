@@ -34,7 +34,7 @@ User (CLI) ──> main.py ──> retrieval.py ──> SQLite (rag.db: chunks +
 | `main.py` | CLI interface and `answer_query()` orchestration |
 | `app.py` | Streamlit web UI (chat + retrieved-context inspector) |
 | `test_queries.py` | Functional test suite (answerable / unanswerable / edge cases) |
-| `documents/` | The knowledge base (plain `.txt`/`.md` files) |
+| `documents/` | The knowledge base (`.txt`/`.md`/`.pdf`/`.docx` files) |
 
 ## Setup
 
@@ -50,8 +50,10 @@ User (CLI) ──> main.py ──> retrieval.py ──> SQLite (rag.db: chunks +
    - Web UI: `streamlit run app.py` (chat interface with a "Retrieved context"
      expander showing the chunks and similarity scores behind each answer)
 
-To change the knowledge base, drop `.txt` or `.md` files into `documents/` and re-run
-`python ingest.py`.
+To change the knowledge base, drop `.txt`, `.md`, `.pdf`, or `.docx` files into
+`documents/` and re-run `python ingest.py`. PDF text is extracted per page and
+DOCX per paragraph; note that a PDF page longer than the chunk size limit stays
+one (oversized) chunk, since chunking merges paragraphs but never splits them.
 
 ## Testing
 
