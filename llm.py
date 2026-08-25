@@ -81,15 +81,23 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return [item.embedding for item in items]
 
 
-def chat(system_prompt: str, user_prompt: str) -> str:
-    """One-turn chat completion against the local model."""
+def chat(system_prompt: str, user_prompt: str, max_tokens: int | None = None) -> str:
+    """One-turn chat completion against the local model. max_tokens overrides
+    the default answer length for this call only (useful for short auxiliary
+    calls like query rewriting)."""
     init_chat_model()
-    completion = _chat_client.complete_chat(
-        [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
-    )
+    previous = _chat_client.settings.max_tokens
+    if max_tokens is not None:
+        _chat_client.settings.max_tokens = max_tokens
+    try:
+        completion = _chat_client.complete_chat(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
+        )
+    finally:
+        _chat_client.settings.max_tokens = previous
     return completion.choices[0].message.content.strip()
 
 

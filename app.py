@@ -14,7 +14,7 @@ import config
 import db
 import llm
 import retrieval
-from main import FALLBACK_ANSWER, build_user_prompt
+from main import FALLBACK_ANSWER, build_user_prompt, rewrite_query
 
 st.set_page_config(page_title="Local RAG Assistant", page_icon="📚")
 
@@ -68,13 +68,17 @@ if question:
 
     with st.chat_message("assistant"):
         with st.spinner("Retrieving..."):
-            chunks = retrieval.get_top_chunks(question)
+            qa_history = [(q, a) for q, a, _ in st.session_state.history]
+            search_query = rewrite_query(qa_history, question)
+            chunks = retrieval.get_top_chunks(search_query)
+        if search_query != question:
+            st.caption(f'Interpreted as: "{search_query}"')
         if not chunks:
             answer = FALLBACK_ANSWER
             st.write(answer)
         else:
             stream = llm.chat_stream(
-                config.SYSTEM_PROMPT, build_user_prompt(question, chunks)
+                config.SYSTEM_PROMPT, build_user_prompt(search_query, chunks)
             )
             answer = st.write_stream(stream)
         if chunks:

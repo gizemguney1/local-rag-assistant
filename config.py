@@ -18,6 +18,19 @@ MIN_SIMILARITY = 0.30     # below this the chunk is considered irrelevant
 # Chunking settings
 MAX_CHUNK_CHARS = 1200    # merge paragraphs up to roughly this size
 
+# Conversational RAG: how many recent turns to use when rewriting a
+# follow-up question into a standalone one.
+REWRITE_HISTORY_TURNS = 3
+
+REWRITE_PROMPT = (
+    "You rewrite follow-up questions into standalone questions. Given a "
+    "conversation and a new question, rewrite the new question so it can be "
+    "understood without reading the conversation, replacing pronouns and "
+    "references with what they refer to. If the question is already "
+    "standalone, return it unchanged. Reply with the rewritten question "
+    "only — no explanations, no quotes."
+)
+
 SYSTEM_PROMPT = (
     "You are a helpful assistant that answers questions using ONLY the "
     "provided context. Rules:\n"

@@ -21,6 +21,35 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 FALLBACK_ANSWER = "I don't have that information in my documents."
 
 
+def rewrite_query(history: list[tuple[str, str]], question: str) -> str:
+    """Rewrite a follow-up question into a standalone one so retrieval (and
+    the answer prompt, which also never sees the conversation) can understand
+    it. Returns the question unchanged when there is no history yet."""
+    if not history:
+        return question
+
+    recent = history[-config.REWRITE_HISTORY_TURNS:]
+    convo = "\n".join(
+        f"User: {q}\nAssistant: {a[:300]}" for q, a in recent
+    )
+    rewritten = llm.chat(
+        config.REWRITE_PROMPT,
+        f"Conversation:\n{convo}\n\nNew question: {question}\n\n"
+        "Standalone question:",
+        max_tokens=80,
+    )
+    first_line = next(
+        (line.strip().strip('"') for line in rewritten.splitlines()
+         if line.strip()),
+        "",
+    )
+    # A tiny model can misbehave; fall back to the original question rather
+    # than search for something malformed.
+    if not first_line or len(first_line) > 300:
+        return question
+    return first_line
+
+
 def build_user_prompt(user_question: str, chunks: list[dict]) -> str:
     context = "\n\n".join(
         f"[Source: {c['source']}]\n{c['content']}" for c in chunks
@@ -32,10 +61,19 @@ def build_user_prompt(user_question: str, chunks: list[dict]) -> str:
     )
 
 
-def answer_query_stream(user_question: str, verbose: bool = False):
-    """Return an iterator over the answer text: retrieval runs immediately,
-    then the LLM's text arrives piece by piece."""
-    chunks = retrieval.get_top_chunks(user_question)
+def answer_query_stream(
+    user_question: str,
+    verbose: bool = False,
+    history: list[tuple[str, str]] | None = None,
+):
+    """Return an iterator over the answer text: rewriting (if there is
+    history) and retrieval run immediately, then the LLM's text arrives
+    piece by piece."""
+    search_query = rewrite_query(history or [], user_question)
+    if verbose and search_query != user_question:
+        print(f"  [rewritten] {search_query}")
+
+    chunks = retrieval.get_top_chunks(search_query)
 
     if verbose:
         for c in chunks:
@@ -46,7 +84,7 @@ def answer_query_stream(user_question: str, verbose: bool = False):
         return iter([FALLBACK_ANSWER])
 
     return llm.chat_stream(
-        config.SYSTEM_PROMPT, build_user_prompt(user_question, chunks)
+        config.SYSTEM_PROMPT, build_user_prompt(search_query, chunks)
     )
 
 
@@ -75,7 +113,9 @@ def main() -> None:
         return
 
     print(f"\nLocal RAG assistant ready ({n_chunks} chunks indexed). "
-          "Type a question, or 'quit' to exit.\n")
+          "Type a question, or 'quit' to exit. Follow-up questions are "
+          "understood in context.\n")
+    history: list[tuple[str, str]] = []
     while True:
         try:
             question = input("You: ").strip()
@@ -85,11 +125,14 @@ def main() -> None:
             continue
         if question.lower() in {"quit", "exit", "q"}:
             break
-        stream = answer_query_stream(question, verbose=verbose)
+        stream = answer_query_stream(question, verbose=verbose, history=history)
         print("\nAssistant: ", end="", flush=True)
+        pieces = []
         for piece in stream:
             print(piece, end="", flush=True)
+            pieces.append(piece)
         print("\n")
+        history.append((question, "".join(pieces).strip()))
 
     print("Goodbye!")
 
