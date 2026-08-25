@@ -91,3 +91,17 @@ def chat(system_prompt: str, user_prompt: str) -> str:
         ]
     )
     return completion.choices[0].message.content.strip()
+
+
+def chat_stream(system_prompt: str, user_prompt: str):
+    """One-turn chat completion, yielding the answer text piece by piece."""
+    init_chat_model()
+    stream = _chat_client.complete_streaming_chat(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+    )
+    for chunk in stream:
+        if chunk.choices and chunk.choices[0].delta.content:
+            yield chunk.choices[0].delta.content

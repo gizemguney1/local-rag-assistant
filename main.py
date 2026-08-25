@@ -18,26 +18,40 @@ import retrieval
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
-def answer_query(user_question: str, verbose: bool = False) -> str:
-    chunks = retrieval.get_top_chunks(user_question)
+FALLBACK_ANSWER = "I don't have that information in my documents."
 
-    if not chunks:
-        return "I don't have that information in my documents."
+
+def build_user_prompt(user_question: str, chunks: list[dict]) -> str:
+    context = "\n\n".join(
+        f"[Source: {c['source']}]\n{c['content']}" for c in chunks
+    )
+    return (
+        f"Context:\n{context}\n\n"
+        f"Question: {user_question}\n\n"
+        "Answer the question using only the context above."
+    )
+
+
+def answer_query_stream(user_question: str, verbose: bool = False):
+    """Return an iterator over the answer text: retrieval runs immediately,
+    then the LLM's text arrives piece by piece."""
+    chunks = retrieval.get_top_chunks(user_question)
 
     if verbose:
         for c in chunks:
             print(f"  [retrieved] {c['source']}#{c['chunk_idx']} "
                   f"(score {c['score']:.3f})")
 
-    context = "\n\n".join(
-        f"[Source: {c['source']}]\n{c['content']}" for c in chunks
+    if not chunks:
+        return iter([FALLBACK_ANSWER])
+
+    return llm.chat_stream(
+        config.SYSTEM_PROMPT, build_user_prompt(user_question, chunks)
     )
-    user_prompt = (
-        f"Context:\n{context}\n\n"
-        f"Question: {user_question}\n\n"
-        "Answer the question using only the context above."
-    )
-    return llm.chat(config.SYSTEM_PROMPT, user_prompt)
+
+
+def answer_query(user_question: str, verbose: bool = False) -> str:
+    return "".join(answer_query_stream(user_question, verbose)).strip()
 
 
 def main() -> None:
@@ -55,7 +69,9 @@ def main() -> None:
     llm.init_chat_model()
 
     if args:  # one-shot mode: question passed on the command line
-        print(answer_query(" ".join(args), verbose=verbose))
+        for piece in answer_query_stream(" ".join(args), verbose=verbose):
+            print(piece, end="", flush=True)
+        print()
         return
 
     print(f"\nLocal RAG assistant ready ({n_chunks} chunks indexed). "
@@ -69,7 +85,11 @@ def main() -> None:
             continue
         if question.lower() in {"quit", "exit", "q"}:
             break
-        print(f"\nAssistant: {answer_query(question, verbose=verbose)}\n")
+        stream = answer_query_stream(question, verbose=verbose)
+        print("\nAssistant: ", end="", flush=True)
+        for piece in stream:
+            print(piece, end="", flush=True)
+        print("\n")
 
     print("Goodbye!")
 

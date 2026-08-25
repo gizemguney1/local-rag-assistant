@@ -70,3 +70,5 @@ questions should get "I don't have that information in my documents."
   from reaching the model, so off-topic questions fail fast without an LLM call.
 - Small models are chosen for speed on laptop hardware; answers from `phi-3.5-mini`
   are decent but not comparable to large cloud models.
+- **Answers are streamed** token by token in both the CLI and the web UI, so the
+  first words appear after ~3 s even when the full answer takes twice as long.

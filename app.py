@@ -14,6 +14,7 @@ import config
 import db
 import llm
 import retrieval
+from main import FALLBACK_ANSWER, build_user_prompt
 
 st.set_page_config(page_title="Local RAG Assistant", page_icon="📚")
 
@@ -66,21 +67,16 @@ if question:
         st.write(question)
 
     with st.chat_message("assistant"):
-        with st.spinner("Retrieving and generating..."):
+        with st.spinner("Retrieving..."):
             chunks = retrieval.get_top_chunks(question)
-            if not chunks:
-                answer = "I don't have that information in my documents."
-            else:
-                context = "\n\n".join(
-                    f"[Source: {c['source']}]\n{c['content']}" for c in chunks
-                )
-                user_prompt = (
-                    f"Context:\n{context}\n\n"
-                    f"Question: {question}\n\n"
-                    "Answer the question using only the context above."
-                )
-                answer = llm.chat(config.SYSTEM_PROMPT, user_prompt)
-        st.write(answer)
+        if not chunks:
+            answer = FALLBACK_ANSWER
+            st.write(answer)
+        else:
+            stream = llm.chat_stream(
+                config.SYSTEM_PROMPT, build_user_prompt(question, chunks)
+            )
+            answer = st.write_stream(stream)
         if chunks:
             with st.expander("Retrieved context"):
                 for c in chunks:
