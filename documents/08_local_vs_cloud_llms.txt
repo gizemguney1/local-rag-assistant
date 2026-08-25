@@ -1,0 +1,11 @@
+Local vs Cloud LLMs — Course Notes
+
+Running a language model locally and calling a cloud API are two very different deployment choices, each with clear trade-offs.
+
+Local models win on privacy and cost: documents and questions never leave the device, which matters for sensitive data, and there is no per-token bill — inference is free once the model is downloaded. They also work fully offline, which cloud APIs cannot.
+
+Cloud models win on quality and capacity: frontier models served from data centers are far larger than anything a laptop can hold, so they reason better, follow instructions more reliably, and support much longer contexts. They also need no local hardware beyond a network connection.
+
+Small local models in the 1 to 7 billion parameter range, such as Phi-3.5 Mini or Qwen 2.5, run acceptably on a modern laptop CPU and comfortably on an entry-level GPU. Their answers are decent for grounded tasks like RAG, where the needed facts are supplied in the prompt, but they are noticeably weaker at open-ended reasoning.
+
+A common hybrid pattern is to prototype locally for privacy and zero cost, then switch the same OpenAI-compatible client to a cloud endpoint when higher answer quality is needed. Because Foundry Local exposes an OpenAI-compatible API, this switch usually only changes a base URL and a model name.

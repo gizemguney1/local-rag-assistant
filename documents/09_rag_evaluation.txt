@@ -1,0 +1,11 @@
+Evaluating a RAG System — Course Notes
+
+A RAG system has two stages that can each fail independently, so evaluation should look at retrieval and generation separately.
+
+Retrieval quality is measured with a set of test questions whose correct source document is known. Hit rate (did the correct document appear in the top-k results?) and the rank of the correct chunk are the simplest useful metrics. If retrieval fails, no prompt engineering can save the answer.
+
+Generation quality is judged on groundedness: does the answer use only the retrieved context, does it cite its source, and does it refuse when the context is insufficient? A practical test set therefore mixes three question types: answerable questions (the answer is in the documents), unanswerable questions (the system should say it does not know rather than fabricate), and edge cases such as empty or overly broad input.
+
+Response time is also worth recording per question. In a local RAG system most of the latency comes from the language model generating tokens, not from retrieval, so timing helps decide whether to shorten answers, retrieve fewer chunks, or pick a smaller model.
+
+Finally, a similarity threshold below which chunks are discarded acts as a cheap safety layer: fully off-topic questions can be rejected before the model is ever called, which is both faster and safer than relying on the prompt alone.

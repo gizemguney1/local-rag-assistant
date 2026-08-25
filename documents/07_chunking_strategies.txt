@@ -1,0 +1,11 @@
+Chunking Strategies for RAG — Course Notes
+
+Chunking is the step that splits documents into passages before embedding. It matters because retrieval works at chunk level: if a chunk is too large it mixes several topics and its embedding becomes blurry; if it is too small it loses the surrounding context the model needs to answer well.
+
+A good starting point is paragraph-based chunking: split on blank lines, then greedily merge consecutive paragraphs until a size limit of roughly 500 to 1500 characters is reached. This keeps sentences intact and respects the author's own topic boundaries.
+
+For long, structured documents, heading-based chunking usually beats plain paragraph merging. Splitting at section headings keeps each chunk about a single topic, and prepending the heading text to the chunk gives the embedding extra topical signal.
+
+Chunk overlap is another common refinement: neighboring chunks share the last one or two sentences, so information sitting on a chunk boundary is not lost to retrieval. Typical overlap is 10 to 20 percent of the chunk size.
+
+Whatever strategy is used, store the source document name and the chunk index alongside each chunk. This enables source citations in answers and makes retrieval results easy to debug.

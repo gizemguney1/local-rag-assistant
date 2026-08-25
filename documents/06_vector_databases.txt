@@ -1,0 +1,9 @@
+Vector Databases and Search Strategies — Course Notes
+
+A vector database stores embedding vectors and answers nearest-neighbor queries: given a query vector, find the stored vectors most similar to it. For small collections (up to a few hundred or thousand chunks) a brute-force scan that compares the query against every stored vector is perfectly fine and often the simplest correct choice.
+
+At larger scale, brute force becomes slow because every query touches every vector. Dedicated vector databases such as FAISS, Chroma, or the sqlite-vec extension for SQLite use Approximate Nearest Neighbor (ANN) indexes. ANN structures like HNSW graphs or IVF partitions trade a tiny amount of accuracy for dramatically faster lookups, turning a linear scan into a near-logarithmic search.
+
+A practical middle step before adopting an ANN index is caching: load all embeddings into memory once as a single matrix and compute all similarities with one vectorized matrix-vector multiplication. This avoids re-reading and re-parsing the database on every query and easily handles thousands of chunks in milliseconds.
+
+The rule of thumb for choosing a search strategy: brute-force scan for hundreds of chunks, in-memory matrix search for thousands, and a real ANN index (sqlite-vec, FAISS) for tens of thousands and beyond.

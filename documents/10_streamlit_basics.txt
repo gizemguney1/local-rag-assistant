@@ -1,0 +1,9 @@
+Streamlit for AI Apps — Course Notes
+
+Streamlit is a Python framework that turns a plain script into an interactive web app. It is popular for AI demos because a chat interface can be built in under a hundred lines with no HTML, CSS, or JavaScript.
+
+A Streamlit app is just a Python file run with `streamlit run app.py`. The script re-executes from top to bottom on every user interaction, which is why two features matter for AI apps: `st.session_state` preserves values (such as chat history) across reruns, and `st.cache_resource` runs expensive setup (such as loading a model) only once per server process.
+
+The chat building blocks are `st.chat_input` for the user's message box and `st.chat_message` for rendering user and assistant bubbles. Long operations are wrapped in `st.spinner` so the user sees progress, and `st.expander` can hide optional detail such as the retrieved context behind a click.
+
+For a RAG assistant, a useful Streamlit pattern is transparency: alongside each answer, show which chunks were retrieved and their similarity scores in an expander. This makes retrieval quality visible and turns the app into a debugging tool as well as a demo.
