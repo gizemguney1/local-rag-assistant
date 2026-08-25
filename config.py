@@ -16,7 +16,12 @@ TOP_K = 3                 # number of chunks handed to the LLM as context
 MIN_SIMILARITY = 0.30     # below this the chunk is considered irrelevant
 
 # Chunking settings
-MAX_CHUNK_CHARS = 1200    # merge paragraphs up to roughly this size
+MAX_CHUNK_CHARS = 1200      # merge paragraphs up to roughly this size
+CHUNK_OVERLAP_CHARS = 120   # tail of a chunk repeated at the start of the next
+                            # (~10% of the chunk size) so information sitting on
+                            # a chunk boundary is not lost to retrieval; larger
+                            # overlaps measurably diluted embeddings on this
+                            # small-document knowledge base (see evaluate.py)
 
 # Conversational RAG: how many recent turns to use when rewriting a
 # follow-up question into a standalone one.

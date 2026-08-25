@@ -1,11 +1,13 @@
 """Data ingestion pipeline (Week 3 of the plan).
 
 Reads every .txt/.md/.pdf/.docx file in the documents folder, splits it
-into paragraph-based chunks, embeds each chunk with the local embedding
-model, and stores chunk + vector in SQLite. Re-running rebuilds the
-database.
+into chunks (markdown-heading sections first, then paragraph merging with
+a small overlap between neighboring chunks), embeds each chunk with the
+local embedding model, and stores chunk + vector in SQLite. Re-running
+rebuilds the database.
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -35,19 +37,63 @@ def read_document(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def chunk_text(text: str, max_chars: int = config.MAX_CHUNK_CHARS) -> list[str]:
-    """Split text on blank lines, then greedily merge paragraphs up to max_chars."""
-    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
-    chunks: list[str] = []
-    current = ""
-    for para in paragraphs:
-        if current and len(current) + len(para) + 2 > max_chars:
-            chunks.append(current)
-            current = para
+def split_sections(text: str) -> list[tuple[str, str]]:
+    """Split text at markdown headings into (heading, body) pairs. Text
+    without headings becomes a single section with an empty heading."""
+    sections: list[tuple[str, str]] = []
+    heading = ""
+    body_lines: list[str] = []
+    for line in text.splitlines():
+        if re.match(r"^#{1,6}\s", line):
+            if body_lines:
+                sections.append((heading, "\n".join(body_lines)))
+                body_lines = []
+            heading = line.lstrip("#").strip()
         else:
-            current = f"{current}\n\n{para}" if current else para
-    if current:
-        chunks.append(current)
+            body_lines.append(line)
+    if body_lines:
+        sections.append((heading, "\n".join(body_lines)))
+    return sections
+
+
+def _overlap_tail(text: str, max_chars: int) -> str:
+    """Last full sentence(s) of `text`, at most max_chars long."""
+    sentences = re.split(r"(?<=[.!?])\s+", text.replace("\n", " "))
+    tail = ""
+    for sentence in reversed(sentences):
+        candidate = f"{sentence} {tail}".strip()
+        if len(candidate) > max_chars:
+            break
+        tail = candidate
+    return tail
+
+
+def chunk_text(
+    text: str,
+    max_chars: int = config.MAX_CHUNK_CHARS,
+    overlap_chars: int = config.CHUNK_OVERLAP_CHARS,
+) -> list[str]:
+    """Split into markdown-heading sections, then greedily merge paragraphs
+    up to max_chars. Each chunk starts with its section heading (extra
+    topical signal for the embedding), and neighboring chunks of the same
+    section share an overlap so boundary information is not lost."""
+
+    def finish(heading: str, chunk: str) -> str:
+        return f"{heading}\n\n{chunk}" if heading else chunk
+
+    chunks: list[str] = []
+    for heading, body in split_sections(text):
+        paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
+        current = ""
+        for para in paragraphs:
+            if current and len(current) + len(para) + 2 > max_chars:
+                chunks.append(finish(heading, current))
+                tail = _overlap_tail(current, overlap_chars)
+                current = f"{tail}\n\n{para}" if tail else para
+            else:
+                current = f"{current}\n\n{para}" if current else para
+        if current:
+            chunks.append(finish(heading, current))
     return chunks
 
 
